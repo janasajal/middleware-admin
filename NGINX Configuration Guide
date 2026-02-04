@@ -1,11 +1,91 @@
-NGINX Configuration Guide (Static Site, Reverse Proxy, Load Balancing, SSL)
+# sudo yum install epel-release -y
+# sudo yum install nginx -y
+[root@k8s-master ~]# nginx -v
+nginx version: nginx/1.26.3
 
-This guide explains how to install NGINX and configure it for:
 
-Serving a static website
 
-Acting as a reverse proxy
+# main configuration file 
+# /etc/nginx/nginx.conf
+===============================================================
+** Static website**
+*** cat /etc/nginx/nginx.conf
+ # See http://nginx.org/en/docs/ngx_core_module.html#include
+    # for more information.
+    include /etc/nginx/conf.d/*.conf;
 
-Using different load-balancing methods
+    server {
+        listen       80;
+        listen       [::]:80;
+        server_name  _;
+        root         /usr/share/nginx/html;
 
-Enabling SSL/TLS
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+    }
+
+....static website html file location is /usr/share/nginx/html/index.html
+
+====================================================================
+
+** reverse proxy configuration**
+As per nginx.conf Reverse proxy server block will be locate in  "include /etc/nginx/conf.d/*.conf"
+
+[root@k8s-master loadtest]# cat /etc/nginx/conf.d/my_site.conf
+upstream backend_app {
+    server 127.0.0.1:3001;
+    server 127.0.0.1:3002;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        proxy_pass http://backend_app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+[root@k8s-master loadtest]#
+==========================================
+***Switching Load Balancing Methods******
+**Nginx uses round-robin load balancing by default.
+_____________________________________
+To Use Least Connections "Sends the new request to the backend server that currently has the fewest active connections."
+upstream backend_app {
+    least_conn;
+    server 127.0.0.1:3001;
+    server 127.0.0.1:3002;
+}
+__________________________
+__________________________
+To Use IP Hash "Ensures all requests from the same client IP always go to the same backend server."
+upstream backend_app {
+    ip_hash;
+    server 127.0.0.1:3001;
+    server 127.0.0.1:3002;
+}
+________________________________
+##########SSL/TLS Setup in NGINX ########
+
+[root@k8s-master loadtest]# cat /etc/nginx/conf.d/my_site.conf
+upstream backend_app {
+    ip_hash;
+    server 127.0.0.1:3001;
+    server 127.0.0.1:3002;
+}
+
+server {
+    listen 443 ssl;
+    server_name localhost;
+    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+    location / {
+        proxy_pass http://backend_app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+[root@k8s-master loadtest]#
