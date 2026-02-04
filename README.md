@@ -1,11 +1,1 @@
-NGINX Configuration Guide (Static Site, Reverse Proxy, Load Balancing, SSL)
 
-This guide explains how to install NGINX and configure it for:
-
-Serving a static website
-
-Acting as a reverse proxy
-
-Using different load-balancing methods
-
-Enabling SSL/TLS# middleware-admin
