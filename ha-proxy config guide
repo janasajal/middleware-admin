@@ -1,0 +1,38 @@
+For local DNS first do host entry on each server.
+
+#cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.30  master2.example.com      master2
+192.168.1.31  master1.example.com      master1
+192.168.1.32  workernode1.example.com  workernode1
+192.168.1.33  workernode2.example.com  workernode2
+192.168.1.34  loadbalancer.example.com loadbalancer
+
+# dnf list availabe 'haproxy*'
+[root@k8s-master ~]# dnf install haproxy -y
+[root@k8s-master ~]# rpm -qi haproxy
+Name        : haproxy
+Version     : 3.0.5
+...
+**disable Firewall & Sselinux ****
+Modify the haproxy configuration file.
+vi /etc/haproxy/haproxy.cfg
+>>>
+**add below line **
+# FRONTEND: Entry point for Kubernetes API requests
+# ======================
+frontend kubernetes-frontend                        ## creates frontend section with any name
+    bind 0.0.0.0:6443                               ## Listen on all network interfaces on port 6443
+    option tcplog                                   ## Enable detailed TCP connection logging
+    mode tcp                                        ## Operate in raw TCP mode (required for HTTPS traffic)
+    default_backend kubernetes-backend              ## Forward all incoming requests to the kubernetes-backend
+# =========================================
+# BACKEND: Load-balanced pool of Kubernetes API servers
+# =========================================
+backend kubernetes-backend                           ## creates backend with any name
+    mode tcp                                         ## Backend also processes connections in TCP mode
+    balance roundrobin                               ## Use round-robin to distribute API requests evenly
+    option tcp-check                                 ## Perform TCP-level health checks to ensure masters are alive
+    server master01 172.24.42.229:6443 check           ## 'check' enables health monitoring for each server
+    server master02 172.24.41.95:6443 check           ##
