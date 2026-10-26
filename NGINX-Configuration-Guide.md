@@ -532,12 +532,7 @@ sudo ss -tlnp | grep :80
 
 ---
 
-## Additional Resources
 
-- **Official Documentation:** https://nginx.org/en/docs/
-- **Community Forum:** https://forum.nginx.org/
-- **GitHub Repository:** https://github.com/nginx/nginx
-- **SSL Configuration Generator:** https://ssl-config.mozilla.org/
 
 ---
 
